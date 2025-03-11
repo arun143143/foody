@@ -1,11 +1,13 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from users.permissions import IsRestaurantOwner
 from .models import CuisineType, Restaurant, MenuItem
 from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import CuisineTypeSerializer, RestaurantSerializer, MenuItemSerializer
+from .pagination import CustomPagination
 
 class CuisineTypeListCreateAPIView(APIView):
     """
@@ -39,9 +41,23 @@ class RestaurantListCreateAPIView(APIView):
 
 
     def get(self, request):
-        restaurants = Restaurant.objects.all().prefetch_related('cuisines')
+        Restaurants = Restaurant.objects.all().prefetch_related('cuisines')
+        # pagnation
+        pagnator = PageNumberPagination()
+        pagnator.page_size = 10
+        result_page = pagnator.paginate_queryset(Restaurants, request)
+
+        if result_page is not None:
+
+            serialze = RestaurantSerializer(result_page, many = True)
+            return pagnator.get_paginated_response(serialze.data)
+
+        return Response({"error": "pagnation failed"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+        """restaurants = Restaurant.objects.all().prefetch_related('cuisines')
         serializer = RestaurantSerializer(restaurants, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data)"""
 
     def post(self, request):
         
